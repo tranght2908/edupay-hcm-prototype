@@ -5,7 +5,7 @@
   const { esc, money, icon, btn, field, grid, bindGrid, dialog, menu, toast, norm, $, $$, badge, parseMoney, toISO, fromISO } = UI;
   const G = 'Thu tiền & phiếu thu';
   const TODAY = '29/09/2025'; // "today" inside the 2025-2026 sample data
-  const COLLECTOR = 'Thị Hà Doãn';
+  const COLLECTOR = 'Lê Thị Thu';
   const METHOD = { 'tien-mat': 'Tiền mặt', 'chuyen-khoan': 'Chuyển khoản' };
   const calc = () => App.calc;
 
@@ -44,7 +44,7 @@
   function createPayment(o) {
     const n = nextReceiptNo();
     const p = { id: 'p' + Number(n.slice(2)), receiptNo: n, studentId: o.studentId, roundId: o.roundId, lines: o.lines, amount: o.lines.reduce((t, l) => t + l.amount, 0),
-      method: o.method, date: o.date || TODAY, time: o.time || nowTime(), payer: o.payer || '', collector: o.collector || COLLECTOR, note: o.note || '', status: 'da-ghi-nhan', bankRef: o.bankRef || '' };
+      method: o.method, date: o.date || TODAY, time: o.time || nowTime(), payer: o.payer || '', collector: o.collector || (App.user() || {}).name || COLLECTOR, note: o.note || '', status: 'da-ghi-nhan', bankRef: o.bankRef || '' };
     if (o.transferId) p.transferId = o.transferId;
     while ((D().payments || []).some((x) => x.id === p.id)) p.id += 'x';
     D().payments.push(p);
@@ -105,7 +105,12 @@
   // ======================================================================
   // 12.2 — Ghi nhận thu tiền (partial collection dialog)
   // ======================================================================
+  // Role checks (Tài liệu thuyết minh §4): only Thủ quỹ / Người thu records or cancels payments.
+  const canCollect = () => App.can('thu-tien', 'full');
+  const canVoid = () => App.can('phieu-thu', 'full');
+  const roToast = () => toast('Vai trò ' + ((App.role() || {}).name || '') + ' chỉ được xem, không ghi nhận hoặc hủy thu.', 'danger');
   function openCollect(stId, roundId, onDone, onClose, prefill) {
+    if (!canCollect()) { roToast(); return null; }
     const st = student(stId); const round = getRound(roundId);
     if (!st || !round) { toast('Không tìm thấy học sinh trong đợt thu', 'danger'); return; }
     const s = calc().studentStatus(stId, roundId);
@@ -142,7 +147,7 @@
       '<div class="form-grid" style="--cols:3">' +
       field({ label: 'Người nộp tiền', id: 'ttPayer', value: (st.parent && st.parent.name) || '', required: true }) +
       field({ label: 'Ngày thu', id: 'ttDate', type: 'date', value: TODAY, required: true }) +
-      field({ label: 'Người thu', id: 'ttCollector', type: 'readonly', value: COLLECTOR }) +
+      field({ label: 'Người thu', id: 'ttCollector', type: 'readonly', value: (App.user() || {}).name || COLLECTOR }) +
       field({ label: 'Ghi chú', id: 'ttNote', placeholder: 'Ví dụ: phụ huynh nộp trước một phần', cls: 'span-all' }) +
       '</div></div></div>';
     const dlg = dialog({
@@ -250,7 +255,7 @@
         field({ label: 'Trạng thái thu', id: 'fStatus', type: 'select', options: [{ value: '', label: 'Tất cả' }, { value: 'chua-thu', label: 'Chưa thu' }, { value: 'mot-phan', label: 'Thu một phần' }, { value: 'da-thu', label: 'Đã thu' }], value: f.status, cls: 'w-status' }) +
         '</div>' +
         '<div class="toolbar tt-toolbar"><div class="tt-search">' + UI.search({ id: 'fQ', placeholder: 'Tìm theo tên học sinh, lớp, mã học sinh…', value: f.q }) + '</div><span class="grow"></span>' +
-        btn({ label: 'Đối soát ngân hàng', icon: 'exchange', action: 'reconcile', id: 'btnReconcile' }) + btn({ label: 'Thu tiền', icon: 'wallet', variant: 'primary', action: 'collect', id: 'btnCollect' }) + '</div>' +
+        btn({ label: 'Đối soát ngân hàng', icon: 'exchange', action: 'reconcile', id: 'btnReconcile' }) + btn({ label: 'Thu tiền', icon: 'wallet', variant: 'primary', action: 'collect', id: 'btnCollect', attrs: { 'data-write': '' } }) + '</div>' +
         '<div class="tt-table" id="ttTable"></div>';
 
       const drawTabs = () => { $('#ttTabs', el).innerHTML = flowTabs('thu-tien', roundId); };
@@ -294,6 +299,7 @@
       const refresh = () => { drawStats(); drawTable(); };
       const collect = (id) => openCollect(id, roundId, refresh);
       const batchCollect = async () => {
+        if (!canCollect()) { roToast(); return; }
         const list = selected.map((id) => ({ id, s: calc().studentStatus(id, roundId) })).filter((x) => x.s.remaining > 0);
         if (!list.length) { toast('Các học sinh đã chọn đều đã thu đủ.'); return; }
         const sum = list.reduce((t, x) => t + x.s.remaining, 0);
@@ -354,6 +360,7 @@
     return p;
   }
   function assignDialog(t, onDone) {
+    if (!canCollect()) { roToast(); return; }
     const round = getRound(t.roundId);
     const open = calc().roundStudents(t.roundId).map((st) => ({ st, s: calc().studentStatus(st.id, t.roundId) })).filter((x) => x.s.remaining > 0);
     const text = norm(t.content + ' ' + t.fromName);
@@ -417,7 +424,7 @@
         field({ label: 'Kết quả đối soát', id: 'fResult', type: 'select', value: f.result, cls: 'w-status', options: [{ value: '', label: 'Tất cả' }, { value: 'pending', label: 'Chờ xác nhận' }, { value: 'exact', label: 'Khớp đúng' }, { value: 'issue', label: 'Cần xử lý' }, { value: 'done', label: 'Đã xác nhận' }, { value: 'refund', label: 'Cần hoàn tiền' }] }) +
         '</div>' +
         '<div class="toolbar tt-toolbar"><div class="tt-search">' + UI.search({ id: 'fQ', placeholder: 'Tìm theo nội dung chuyển khoản, mã giao dịch, người chuyển…' }) + '</div><span class="grow"></span>' +
-        btn({ label: 'Quay lại thu tiền', icon: 'arrow-left', action: 'back' }) + btn({ label: 'Xác nhận các giao dịch khớp đúng', icon: 'check', variant: 'primary', action: 'confirmAll', id: 'btnAll' }) + '</div>' +
+        btn({ label: 'Quay lại thu tiền', icon: 'arrow-left', action: 'back' }) + btn({ label: 'Xác nhận các giao dịch khớp đúng', icon: 'check', variant: 'primary', action: 'confirmAll', id: 'btnAll', attrs: { 'data-write': '' } }) + '</div>' +
         '<div class="tt-table" id="ttTable"></div>';
       const list = () => (D().bankTransfers || []).filter((t) => t.roundId === roundId);
       const draw = () => {
@@ -448,10 +455,10 @@
             { key: 'result', label: 'Kết quả', render: (r) => { const [l, tone] = RESULT[r.m.kind]; return badge(l, tone); } },
             { key: 'act', label: 'Thao tác', render: (r) => {
               const k = r.m.kind; const id = esc(r.t.id);
-              if (k === 'exact' || k === 'partial') return btn({ label: 'Xác nhận', variant: 'primary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'confirm' } }) + btn({ icon: 'ellipsis-dots-v', aria: 'Thêm thao tác', variant: 'tertiary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'more' } });
+              if (k === 'exact' || k === 'partial') return btn({ label: 'Xác nhận', variant: 'primary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'confirm', 'data-write': '' } }) + btn({ icon: 'ellipsis-dots-v', aria: 'Thêm thao tác', variant: 'tertiary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'more', 'data-write': '' } });
               if (k === 'done') return btn({ label: 'Xem phiếu', icon: 'file-text-o', variant: 'tertiary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'view' } });
-              if (k === 'refund') return btn({ label: 'Hoàn tác', variant: 'tertiary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'undo' } });
-              return btn({ label: k === 'over' ? 'Xử lý' : 'Gán học sinh', icon: 'user-check', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'assign' } });
+              if (k === 'refund') return btn({ label: 'Hoàn tác', variant: 'tertiary', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'undo', 'data-write': '' } });
+              return btn({ label: k === 'over' ? 'Xử lý' : 'Gán học sinh', icon: 'user-check', cls: 'sm', attrs: { 'data-tx': id, 'data-do': 'assign', 'data-write': '' } });
             } },
           ],
         }) + '<div class="tt-gridfoot"><span>' + rows.length + ' giao dịch · ' + esc(D().school.bank) + ' ' + esc(D().school.account) + '</span><span>Hệ thống tự khớp theo mã học sinh trong nội dung chuyển khoản (ví dụ HP-HS100001-T09). Phiếu thu chỉ được tạo sau khi xác nhận.</span></div>';
@@ -466,6 +473,7 @@
         if (b) {
           const t = (D().bankTransfers || []).find((x) => x.id === b.dataset.tx); if (!t) return;
           const m = matchOf(t);
+          if (['confirm', 'undo', 'more'].includes(b.dataset.do) && !canCollect()) { roToast(); return; }
           if (b.dataset.do === 'confirm') { const p = confirmTransfer(t, m.st.id); App.save(); draw(); toast('Đã xác nhận ' + money(p.amount) + ' đ cho ' + m.st.name + ' · ' + p.receiptNo, 'success'); }
           if (b.dataset.do === 'assign') assignDialog(t, draw);
           if (b.dataset.do === 'view' && m.p) App.go('/phieu-thu/' + m.p.id);
@@ -476,6 +484,7 @@
         const a = e.target.closest('[data-action]'); if (!a) return;
         if (a.dataset.action === 'back') App.go('/thu-tien?round=' + roundId);
         if (a.dataset.action === 'confirmAll') {
+          if (!canCollect()) { roToast(); return; }
           const ex = list().filter((t) => t.status === 'cho-xu-ly' && matchOf(t).kind === 'exact');
           if (!ex.length) return;
           if (!(await UI.confirm({ title: 'Xác nhận giao dịch khớp đúng', okLabel: 'Xác nhận', html: 'Tạo <b>' + ex.length + '</b> phiếu thu chuyển khoản cho các giao dịch khớp đúng số tiền và mã học sinh (tổng <b>' + money(ex.reduce((s, t) => s + t.amount, 0)) + ' đ</b>)?' }))) return;
@@ -525,6 +534,7 @@
     });
   }
   function cancelReceipt(p, after) {
+    if (!canVoid()) { roToast(); return; }
     const st = student(p.studentId) || { name: '' };
     const s = calc().studentStatus(p.studentId, p.roundId);
     const nextStatus = calc().STATUS_LABEL[s.paid - p.amount <= 0 ? 'chua-thu' : 'mot-phan'][0];
@@ -537,7 +547,7 @@
       onMount(d, close) {
         $('[data-action="ok"]', d).addEventListener('click', () => {
           if (!UI.validate(d)) return;
-          p.status = 'da-huy'; p.cancelReason = $('#ttReason', d).value.trim(); p.cancelledAt = TODAY + ' ' + nowTime(); p.cancelledBy = COLLECTOR;
+          p.status = 'da-huy'; p.cancelReason = $('#ttReason', d).value.trim(); p.cancelledAt = TODAY + ' ' + nowTime(); p.cancelledBy = (App.user() || {}).name || COLLECTOR;
           const t = (D().bankTransfers || []).find((x) => x.paymentId === p.id || (p.transferId && x.id === p.transferId));
           if (t) { t.status = 'cho-xu-ly'; t.paymentId = ''; t.studentId = ''; }
           App.save(); close(); toast('Đã hủy phiếu thu ' + p.receiptNo, 'success'); after && after();
@@ -564,7 +574,7 @@
         field({ label: 'Trạng thái phiếu', id: 'fStatus', type: 'select', value: f.status, cls: 'w-status', options: [{ value: '', label: 'Tất cả' }, { value: 'da-ghi-nhan', label: 'Đã ghi nhận' }, { value: 'da-huy', label: 'Đã hủy' }] }) +
         '</div>' +
         '<div class="toolbar tt-toolbar"><div class="tt-search">' + UI.search({ id: 'fQ', placeholder: 'Tìm theo số phiếu, học sinh, người nộp, mã giao dịch…' }) + '</div><span class="grow"></span>' +
-        btn({ label: 'Xuất Excel', icon: 'download', action: 'export' }) + btn({ label: 'Thu tiền', icon: 'wallet', variant: 'primary', action: 'collect' }) + '</div>' +
+        btn({ label: 'Xuất Excel', icon: 'download', action: 'export' }) + btn({ label: 'Thu tiền', icon: 'wallet', variant: 'primary', action: 'collect', attrs: { 'data-write': '' } }) + '</div>' +
         '<div class="tt-table" id="ttTable"></div>';
       const yr = () => new Set(yearRounds().map((r) => r.id));
       const draw = () => {
@@ -607,7 +617,7 @@
         if (m) {
           const p = (D().payments || []).find((x) => x.id === m.dataset.more); if (!p) return;
           menu(m, [{ label: 'Xem chi tiết', icon: 'file-text-o', onClick: () => App.go('/phieu-thu/' + p.id) }, { label: 'In phiếu', icon: 'print', onClick: () => printPreview(p) },
-            '-', { label: 'Hủy phiếu', icon: 'ban', danger: true, disabled: p.status === 'da-huy', onClick: () => cancelReceipt(p, draw) }]);
+            '-', { label: 'Hủy phiếu', icon: 'ban', danger: true, disabled: p.status === 'da-huy', onClick: () => cancelReceipt(p, draw) }].filter((it) => canVoid() || (it !== '-' && it.label !== 'Hủy phiếu')));
           return;
         }
         const a = e.target.closest('[data-action]'); if (!a) return;
@@ -647,7 +657,7 @@
           hist.map((h) => '<a href="#/phieu-thu/' + esc(h.id) + '" class="' + (h.id === p.id ? 'cur ' : '') + (h.status === 'da-huy' ? 'void' : '') + '"><span><b>' + esc(h.receiptNo) + '</b> · ' + esc(shortDT(h)) + '<span class="sub">' + esc(METHOD[h.method]) + (h.status === 'da-huy' ? ' · Đã hủy' : '') + '</span></span><span class="num">' + money(h.amount) + '</span></a>').join('') +
           '</div><div class="tt-hist-total">Tổng đã thu: <b>' + money(s.paid) + '</b> / ' + money(s.due) + ' đ</div>' +
           '<hr><div class="tt-verify">' + qrSvg(p.receiptNo + p.date, 76) + '<div><b>Mã xác thực</b><span>Quét để kiểm tra tính hợp lệ của phiếu thu ' + esc(p.receiptNo) + '.</span></div></div>' +
-          '<div class="tt-side-actions">' + btn({ label: 'In phiếu', icon: 'print', action: 'print' }) + btn({ label: 'Tải PDF', icon: 'download', action: 'pdf' }) + btn({ label: 'Hủy phiếu', icon: 'ban', variant: 'danger', action: 'void', disabled: void_ }) + '</div>' +
+          '<div class="tt-side-actions">' + btn({ label: 'In phiếu', icon: 'print', action: 'print' }) + btn({ label: 'Tải PDF', icon: 'download', action: 'pdf' }) + btn({ label: 'Hủy phiếu', icon: 'ban', variant: 'danger', action: 'void', attrs: { 'data-write': '' }, disabled: void_ }) + '</div>' +
           '</aside></div>';
       };
       el.onclick = (e) => {

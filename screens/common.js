@@ -22,10 +22,6 @@
   const todo = [
     ['/chinh-sach-gia', 'chinh-sach-gia', 'Chính sách giá'],
     ['/mien-giam', 'mien-giam', 'Miễn giảm'],
-    ['/nguoi-dung', 'nguoi-dung', 'Người dùng'],
-    ['/phan-quyen', 'phan-quyen', 'Phân quyền'],
-    ['/da-don-vi', 'da-don-vi', 'Đa đơn vị'],
-    ['/cong-cu-du-lieu', 'cong-cu', 'Công cụ dữ liệu'],
   ];
   todo.forEach(([path, menu, title]) => route(path, { title, menu, render({ el }) { placeholder(el, title); } }));
 

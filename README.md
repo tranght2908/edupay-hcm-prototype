@@ -58,3 +58,16 @@ Group CSS goes in `screens/<group>.css`, prefixed with a group class (e.g. `.kt-
 - Designs are 1440×900; main content area is ~1164px wide. Recreate layout with flex/grid, not absolute positioning.
 - Must not break at narrow widths: wide tables live inside `.ui-grid-wrap` (scrolls), multi-column layouts collapse (`.split` and `.form-grid` already do at ≤900px).
 - Copy is Vietnamese, taken from the Figma frames. Use data from `App.data`, not hardcoded rows, so screens stay consistent with each other.
+
+## Roles & permissions (Tài liệu thuyết minh EduPay §4)
+Login screen with demo accounts (password `123456`). Roles/users are seeded at the end of `js/data.js` and editable in *Quản trị → Phân quyền / Người dùng*.
+
+| Vai trò | Tài khoản | Quyền |
+|---|---|---|
+| Quản trị hệ thống | `admin` | Người dùng, Phân quyền, Đa đơn vị, Công cụ dữ liệu |
+| Kế toán nhà trường | `ketoan` | Toàn quyền danh mục, học sinh, khoản thu, đăng ký, đợt thu, thông báo, báo cáo; **xem** Thu tiền/Phiếu thu |
+| Thủ quỹ / Người thu | `thuquy` | Toàn quyền Thu tiền, Đối soát, Phiếu thu; **xem** Học sinh, Đợt thu |
+| Ban giám hiệu | `hieutruong` | **Xem** Học sinh, Đợt thu, Thu tiền, Phiếu thu, Báo cáo |
+| Phụ huynh | số điện thoại | Cổng phụ huynh: học phí của con, nộp tiền QR, lịch sử |
+
+API: `App.user()`, `App.role()`, `App.can(menuId)` (may open), `App.can(menuId, 'full')` (may write). Render ctx has `readOnly`; the view gets class `read-only`, which hides any element marked `data-write`. `tools/shot.js … --as=u1..u5` logs in as a user.

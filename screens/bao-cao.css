@@ -1,0 +1,67 @@
+/* screens: bao-cao — Báo cáo thu. Colors only via base.css variables.
+   Chart series: Chuyển khoản = --accent, Tiền mặt = --warning (pair validated for CVD separation). */
+.bc-filters { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.bc-filters .field { width: 260px; }
+.bc-filters .field:nth-child(2) { width: 180px; }
+.bc-scope { display: flex; align-items: center; gap: 6px; font-size: 13px; padding-bottom: 8px; }
+.bc-scope .ic { width: 14px; height: 14px; }
+.bc-kpi { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.bc-pct { font-size: 13px; font-weight: 600; margin-left: 8px; color: var(--text-muted); }
+.bc-counts { display: flex; flex-direction: column; gap: 1px; font-size: 13px; font-weight: 400; color: var(--text-muted); }
+.bc-counts b { font-size: 15px; color: var(--text); display: inline-block; min-width: 38px; }
+.bc-tabn { margin-left: 6px; font-size: 11.5px; background: var(--warning-soft); color: var(--warning); border-radius: 9px; padding: 1px 7px; font-weight: 600; }
+.bc-code { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--text-muted); }
+.bc-view .ui-grid td.bc-debt { font-weight: 700; color: var(--warning); }
+
+/* grade / class table */
+.bc-table .ui-grid tr.bc-grade td { background: var(--grid-bg); font-weight: 600; }
+.bc-table .ui-grid tr.bc-class td:first-child { padding-left: 32px; }
+.bc-table .ui-grid td { height: 42px; }
+
+/* inline progress */
+.bc-prog { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+.bc-prog-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--divider); overflow: hidden; }
+.bc-prog-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.bc-prog-v { width: 48px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+.bc-search { width: min(420px, 100%); }
+.bc-sort { width: 200px; }
+
+/* day chart */
+.bc-chart { margin: 0; padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 10px; }
+.bc-chart figcaption { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.bc-chart figcaption b { flex: 1; font-size: 14px; }
+.bc-legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--text-muted); }
+.bc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bc-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.bc-sw.cash { background: var(--warning); }
+.bc-sw.bank { background: var(--accent); }
+.bc-plot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; height: 240px; padding-bottom: 20px; }
+.bc-yaxis { display: flex; flex-direction: column; justify-content: space-between; font-size: 11.5px; color: var(--text-subtle); text-align: right; font-variant-numeric: tabular-nums; transform: translateY(-0.5em); height: calc(100% + 1em); margin-bottom: -1em; }
+.bc-area { position: relative; min-width: 0; }
+.bc-gridlines { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.bc-gridlines i { display: block; border-top: 1px solid var(--divider); }
+.bc-gridlines i:last-child { border-top-color: var(--border); }
+.bc-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 6px; padding: 0 4px; }
+.bc-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; outline: none; min-width: 0; }
+.bc-stack { width: min(34px, 80%); display: flex; flex-direction: column; gap: 2px; min-height: 2px; }
+.bc-stack i { display: block; min-height: 2px; }
+.bc-stack i:first-child { border-radius: 4px 4px 0 0; }
+.bc-stack i.bank { background: var(--accent); }
+.bc-stack i.cash { background: var(--warning); }
+.bc-col:hover .bc-stack, .bc-col:focus-visible .bc-stack { filter: brightness(1.08); }
+.bc-col:focus-visible { box-shadow: 0 0 0 2px var(--accent) inset; border-radius: 4px; }
+.bc-x { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+.bc-tip { display: none; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-dialog); padding: 8px 10px; font-size: 12.5px; white-space: nowrap; flex-direction: column; gap: 3px; pointer-events: none; font-variant-numeric: tabular-nums; }
+.bc-tip span { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+.bc-tip span b { color: var(--text); }
+.bc-col:hover .bc-tip, .bc-col:focus-visible .bc-tip { display: flex; }
+.bc-col:first-child .bc-tip, .bc-col:nth-child(2) .bc-tip { left: 0; transform: none; }
+.bc-col:last-child .bc-tip, .bc-col:nth-last-child(2) .bc-tip { left: auto; right: 0; transform: none; }
+
+@media (max-width: 600px) {
+  .bc-filters .field, .bc-filters .field:nth-child(2), .bc-sort { width: 100%; }
+  .bc-bars { gap: 2px; padding: 0; }
+  .bc-x { font-size: 10px; }
+  .bc-col:nth-child(even) .bc-x { display: none; }
+}

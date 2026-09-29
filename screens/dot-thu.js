@@ -100,7 +100,7 @@
           UI.stat({ label: 'CÒN PHẢI THU (đ)', value: money(tot.rem) || '0', tone: 'warning' }) +
           '</div>' +
           '<div class="toolbar"><div class="dt-search">' + UI.search({ id: 'dtQ', placeholder: 'Tìm kiếm theo tên đợt thu...', value: q }) + '</div><span class="grow"></span>' +
-          btn({ label: 'Lập đợt thu', icon: 'plus', variant: 'primary', action: 'new' }) + '</div>' +
+          btn({ label: 'Lập đợt thu', icon: 'plus', variant: 'primary', action: 'new', attrs: { 'data-write': '' } }) + '</div>' +
           grid({
             id: 'dtGrid', rows, clickable: true, striped: true,
             empty: month === 'adhoc' ? 'Chưa có đợt thu không đăng ký trước' : 'Chưa có đợt thu trong tháng ' + monthLabel(month),
@@ -121,7 +121,7 @@
       }
       el.onclick = (e) => { const a = e.target.closest('[data-action="new"]'); if (a) openNewRound(year, month, draw); };
       draw();
-      if (query.dialog === 'new') openNewRound(year, month, draw);
+      if (query.dialog === 'new' && App.can('dot-thu', 'full')) openNewRound(year, month, draw);
     },
   });
 
@@ -283,15 +283,15 @@
         el.innerHTML =
           '<div class="view-head"><div class="dt-titlebox"><div class="dt-crumb"><a href="#/dot-thu?month=' + (r.adhoc ? 'adhoc' : r.month) + '">Đợt thu</a> / ' + esc(r.name) + ' <span class="dt-scope">(phạm vi: ' + esc(scopeLabel(r.scope)) + ')</span></div>' +
           '<h1 class="view-title">Tổng quan đợt thu</h1></div><span class="grow"></span>' +
-          btn({ label: 'Cập nhật đợt thu', icon: 'refresh', action: 'items' }) +
-          '<a class="btn" href="#/thu-tien?round=' + esc(r.id) + '">' + icon('money') + '<span>Thu tiền</span></a></div>' +
+          btn({ label: 'Cập nhật đợt thu', icon: 'refresh', action: 'items', attrs: { 'data-write': '' } }) +
+          (App.can('thu-tien') ? '<a class="btn" href="#/thu-tien?round=' + esc(r.id) + '">' + icon('money') + '<span>Thu tiền</span></a>' : '') + (App.can('dot-thu', 'full') ? '' : '<span class="ro-banner">' + icon('eye') + 'Chỉ xem</span>') + '</div>' +
           '<div class="split dt-ov" style="--split-left:280px">' +
           '<div class="card dt-treecard"><div class="dt-treesearch">' + UI.search({ id: 'dtTreeQ', placeholder: 'Tìm khối, lớp...' }) + '</div><div class="tree" id="dtTree">' + tree() + '</div></div>' +
           '<div class="stack">' +
           '<h2 class="dt-ctx">' + esc(nodeLabel(node)) + (r.notice ? ' <span class="badge success">' + icon('bell') + 'Đã gửi thông báo ' + esc(r.notice.sentAt) + '</span>' : '') + '</h2>' +
           '<div class="stats dt-stats3">' + metrics() + '</div>' +
           '<div class="toolbar"><div class="grow">' + UI.search({ id: 'dtOvQ', placeholder: searchPh, value: q }) + '</div>' +
-          btn({ label: 'Thông báo thu tiền', icon: 'bell', variant: 'primary', action: 'notice' }) + '</div>' +
+          btn({ label: 'Thông báo thu tiền', icon: 'bell', variant: 'primary', action: 'notice', attrs: { 'data-write': '' } }) + '</div>' +
           '<div id="dtTable">' + tableHTML() + '</div>' +
           '</div></div>';
         const qi = $('#dtOvQ', el);
@@ -320,11 +320,11 @@
         const b = el.querySelector('.dt-rowmenu[data-stu="' + query.menu + '"]');
         if (b) {
           b.scrollIntoView({ block: 'nearest' });
-          if (query.dialog === 'reg-once' || query.dialog === 'reg-forward') openRegister(r, query.menu, query.dialog === 'reg-once' ? 'once' : 'forward', draw);
+          if ((query.dialog === 'reg-once' || query.dialog === 'reg-forward') && App.can('dot-thu', 'full')) openRegister(r, query.menu, query.dialog === 'reg-once' ? 'once' : 'forward', draw);
           else setTimeout(() => openStudentMenu(b, r, query.menu, draw), 0);
         }
       }
-      if (query.dialog === 'items') openRoundEdit(r, draw);
+      if (query.dialog === 'items' && App.can('dot-thu', 'full')) openRoundEdit(r, draw);
     },
   });
 
@@ -333,7 +333,7 @@
     const m = menu(anchor, [
       { label: 'Đăng ký khoản thu', icon: 'check-square-o', onClick: () => openRegister(r, sid, 'once', redraw) },
       { label: 'Xem khoản phải thu', icon: 'search-plus', onClick: () => openStudentDue(r, sid) },
-    ]);
+    ].filter((it) => App.can('dot-thu', 'full') || it.label !== 'Đăng ký khoản thu'));
     m.classList.add('dt-menu');
     return m;
   }
@@ -351,7 +351,7 @@
           { key: 'amount', label: 'Thành tiền', align: 'right', render: (x) => money(x.amount) || '0' },
         ], empty: 'Học sinh không phải thu khoản nào trong đợt này',
         foot: '<tr><td colspan="5">Tổng phải thu · Đã thu ' + (money(s.paid) || '0') + ' · ' + badge(t, tone) + '</td><td class="num">' + (money(s.due) || '0') + '</td></tr>' }),
-      footer: btn({ label: 'Đóng', action: 'close' }) + '<a class="btn primary" href="#/thu-tien?round=' + esc(r.id) + '&student=' + esc(sid) + '" data-action="close">' + icon('money') + '<span>Thu tiền</span></a>',
+      footer: btn({ label: 'Đóng', action: 'close' }) + (App.can('thu-tien', 'full') ? '<a class="btn primary" href="#/thu-tien?round=' + esc(r.id) + '&student=' + esc(sid) + '" data-action="close">' + icon('money') + '<span>Thu tiền</span></a>' : ''),
     });
   }
 
@@ -510,7 +510,7 @@
           '<div class="field"><label for="ntTpl">Nội dung thông báo</label><textarea class="ctl dt-tpl" id="ntTpl">' + esc(state.tpl) + '</textarea>' +
           '<div class="help">Trường dữ liệu: {hoc_sinh}, {lop}, {dot_thu}, {so_tien}, {han_thanh_toan}</div></div>' +
           '<div class="row end dt-set-foot">' + btn({ label: 'Xem trước', icon: 'eye', action: 'preview' }) +
-          btn({ label: 'Gửi ' + recips.length + ' thông báo', icon: 'paperplane', variant: 'primary', action: 'send', disabled: !recips.length }) + '</div>' +
+          btn({ label: 'Gửi ' + recips.length + ' thông báo', icon: 'paperplane', variant: 'primary', action: 'send', disabled: !recips.length, attrs: { 'data-write': '' } }) + '</div>' +
           '</section>' +
           '<section class="card dt-preview" id="ntPreview">' + preview() + '</section>' +
           '</div>';

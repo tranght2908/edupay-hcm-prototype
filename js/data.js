@@ -210,7 +210,7 @@
   seed('payments', () => {
     const out = []; let no = 1;
     const hm = (h, m) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-    const add = (p) => { out.push(Object.assign({ id: 'p' + no, receiptNo: 'PT' + String(no).padStart(5, '0'), roundId: 'r2', collector: 'Thị Hà Doãn', note: '', status: 'da-ghi-nhan', bankRef: '' }, p)); no++; };
+    const add = (p) => { out.push(Object.assign({ id: 'p' + no, receiptNo: 'PT' + String(no).padStart(5, '0'), roundId: 'r2', collector: 'Lê Thị Thu', note: '', status: 'da-ghi-nhan', bankRef: '' }, p)); no++; };
     const studs = (App.data.students || []).filter((x) => x.classes.y2025);
     const partial = [];
     studs.forEach((st, i) => {
@@ -245,7 +245,7 @@
     const wrong = studs[9];
     const wl = App.calc.studentDue(wrong.id, 'r2').lines.slice(0, 2).map((l) => ({ feeId: l.feeId, amount: l.amount }));
     add({ studentId: wrong.id, lines: wl, amount: wl.reduce((t, l) => t + l.amount, 0), method: 'tien-mat', date: '27/09/2025', time: '10:12', payer: wrong.parent.name,
-      status: 'da-huy', cancelReason: 'Thu nhầm học sinh, đã hoàn tiền mặt cho phụ huynh', cancelledAt: '27/09/2025 10:40', cancelledBy: 'Thị Hà Doãn' });
+      status: 'da-huy', cancelReason: 'Thu nhầm học sinh, đã hoàn tiền mặt cho phụ huynh', cancelledAt: '27/09/2025 10:40', cancelledBy: 'Lê Thị Thu' });
     return out;
   });
 
@@ -269,4 +269,48 @@
     ];
   });
 
+
+  // ---------- Người dùng & phân quyền (owner: lead) ----------
+  // Roles follow "Tài liệu thuyết minh EduPay" §4. perms: {menuItemId: 'full' | 'view'} (menu ids in App.MENU).
+  const ALL_KT = ['nam-hoc', 'khoi-lop', 'hoc-sinh', 'he-dao-tao', 'dien-uu-tien', 'don-vi-tinh', 'khoan-thu', 'dang-ky', 'chinh-sach-gia', 'mien-giam', 'dot-thu', 'bao-cao'];
+  const P = (full, view) => Object.assign({}, ...(full || []).map((k) => ({ [k]: 'full' })), ...(view || []).map((k) => ({ [k]: 'view' })));
+  seed('roles', [
+    { id: 'quan-tri', name: 'Quản trị hệ thống', who: 'Cán bộ CNTT / đơn vị vận hành', home: '/nguoi-dung', noYear: true, system: true,
+      desc: 'Quản lý đơn vị (trường), người dùng, quyền chức năng và quyền dữ liệu.',
+      perms: P(['nguoi-dung', 'phan-quyen', 'da-don-vi', 'cong-cu']) },
+    { id: 'ke-toan', name: 'Kế toán nhà trường', who: 'Kế toán / cán bộ phụ trách thu phí', home: '/dot-thu', system: true,
+      desc: 'Thiết lập năm học, khối lớp, học sinh, danh mục; khai báo khoản thu; đăng ký thu; lập đợt thu, thông báo thu tiền; báo cáo.',
+      perms: P(ALL_KT, ['thu-tien', 'phieu-thu']) },
+    { id: 'thu-quy', name: 'Thủ quỹ / Người thu', who: 'Thủ quỹ hoặc cán bộ được giao thu', home: '/thu-tien', system: true,
+      desc: 'Thu tiền, gạch nợ theo từng khoản, lập chứng từ thu, hóa đơn.',
+      perms: P(['thu-tien', 'phieu-thu'], ['hoc-sinh', 'dot-thu']) },
+    { id: 'bgh', name: 'Ban giám hiệu', who: 'Hiệu trưởng / Phó hiệu trưởng', home: '/bao-cao', system: true,
+      desc: 'Theo dõi tình hình thu và báo cáo của trường.',
+      perms: P([], ['hoc-sinh', 'dot-thu', 'thu-tien', 'phieu-thu', 'bao-cao']) },
+    { id: 'phu-huynh', name: 'Phụ huynh', who: 'Cha mẹ / người giám hộ học sinh', home: '/phu-huynh', noYear: true, system: true,
+      desc: 'Nhận thông báo thu tiền và nộp tiền.',
+      perms: P(['ph-hoc-phi', 'ph-lich-su']) },
+  ]);
+  // dataScope: 'all' | 'grade:g10' | 'class:c10A1' (quyền dữ liệu). studentIds only for parents.
+  seed('users', () => {
+    const st = App.data.students || [];
+    const kid1 = st.find((s) => s.id === 's3'); const kid2 = st.find((s) => s.id === 's150');
+    if (kid1 && kid2) kid2.parent = Object.assign({}, kid1.parent); // two children of the same parent
+    const par = kid1 ? kid1.parent : { name: 'Phụ huynh', phone: '0900000000' };
+    return [
+      { id: 'u1', username: 'admin', name: 'Nguyễn Văn Quản', email: 'admin@nbk.edu.vn', phone: '0901000001', roleId: 'quan-tri', unitId: 'sch1', dataScope: 'all', active: true, demo: true, lastLogin: '29/09/2025 07:45' },
+      { id: 'u2', username: 'ketoan', name: 'Thị Hà Doãn', email: 'doanthiha@nbk.edu.vn', phone: '0901000002', roleId: 'ke-toan', unitId: 'sch1', dataScope: 'all', active: true, demo: true, lastLogin: '29/09/2025 08:02' },
+      { id: 'u3', username: 'thuquy', name: 'Lê Thị Thu', email: 'lethithu@nbk.edu.vn', phone: '0901000003', roleId: 'thu-quy', unitId: 'sch1', dataScope: 'all', active: true, demo: true, lastLogin: '29/09/2025 07:58' },
+      { id: 'u4', username: 'hieutruong', name: 'Trần Minh Đức', email: 'hieutruong@nbk.edu.vn', phone: '0901000004', roleId: 'bgh', unitId: 'sch1', dataScope: 'all', active: true, demo: true, lastLogin: '28/09/2025 16:20' },
+      { id: 'u5', username: par.phone, name: par.name, email: '', phone: par.phone, roleId: 'phu-huynh', unitId: 'sch1', dataScope: 'all', studentIds: ['s3', 's150'], active: true, demo: true, lastLogin: '27/09/2025 20:11' },
+      { id: 'u6', username: 'thuquy2', name: 'Phạm Ngọc Hân', email: 'ngochan@nbk.edu.vn', phone: '0901000006', roleId: 'thu-quy', unitId: 'sch1', dataScope: 'grade:g10', active: true, lastLogin: '26/09/2025 10:05' },
+      { id: 'u7', username: 'phohieutruong', name: 'Võ Thanh Bình', email: 'pht@nbk.edu.vn', phone: '0901000007', roleId: 'bgh', unitId: 'sch1', dataScope: 'all', active: true, lastLogin: '25/09/2025 09:30' },
+      { id: 'u8', username: 'ketoan.cu', name: 'Đỗ Minh Tâm', email: 'minhtam@nbk.edu.vn', phone: '0901000008', roleId: 'ke-toan', unitId: 'sch1', dataScope: 'all', active: false, lastLogin: '15/06/2025 14:12' },
+    ];
+  });
+  seed('orgUnits', [
+    { id: 'sch1', code: 'NBK', name: 'THPT Nguyễn Bỉnh Khiêm', address: '12 Lê Lợi, Phường Bến Thành, TP. Hồ Chí Minh', taxCode: '0301234567', phone: '028 3822 1234', active: true },
+    { id: 'sch2', code: 'LHP', name: 'THPT Lê Hồng Phong', address: '235 Nguyễn Văn Cừ, Phường Chợ Quán, TP. Hồ Chí Minh', taxCode: '0301234568', phone: '028 3835 5678', active: true },
+    { id: 'sch3', code: 'TĐN', name: 'THCS Trần Đại Nghĩa', address: '20 Lý Tự Trọng, Phường Sài Gòn, TP. Hồ Chí Minh', taxCode: '0301234569', phone: '028 3829 0000', active: false },
+  ]);
 })();

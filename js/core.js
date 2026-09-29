@@ -58,7 +58,6 @@
 
   // ---------- menu ----------
   const MENU = [
-    { id: 'he-thong', label: 'Danh mục hệ thống', icon: 'academy-cap', items: [] },
     { id: 'nam-hoc-lop', label: 'Năm học và lớp học', icon: 'calendar', items: [
       { id: 'nam-hoc', label: 'Năm học', icon: 'calendar', path: '/nam-hoc' },
       { id: 'khoi-lop', label: 'Khối và lớp học', icon: 'office', path: '/khoi-lop' },
@@ -77,22 +76,45 @@
       { id: 'dot-thu', label: 'Đợt thu', icon: 'calendar', path: '/dot-thu' },
       { id: 'thu-tien', label: 'Thu tiền', icon: 'money', path: '/thu-tien' },
       { id: 'phieu-thu', label: 'Phiếu thu', icon: 'file-text-o', path: '/phieu-thu' },
+      { id: 'bao-cao', label: 'Báo cáo thu', icon: 'bar-chart', path: '/bao-cao' },
     ] },
-    { id: 'dev', label: 'Tính năng nhà phát…', icon: 'code', items: [
+    { id: 'phu-huynh', label: 'Cổng phụ huynh', icon: 'family', items: [
+      { id: 'ph-hoc-phi', label: 'Học phí của con', icon: 'child', path: '/phu-huynh' },
+      { id: 'ph-lich-su', label: 'Lịch sử nộp tiền', icon: 'clock', path: '/phu-huynh/lich-su' },
+    ] },
+    { id: 'quan-tri', label: 'Quản trị hệ thống', icon: 'cog', items: [
       { id: 'nguoi-dung', label: 'Người dùng', icon: 'users', path: '/nguoi-dung' },
       { id: 'phan-quyen', label: 'Phân quyền', icon: 'shield', path: '/phan-quyen' },
       { id: 'da-don-vi', label: 'Đa đơn vị', icon: 'building', path: '/da-don-vi' },
       { id: 'cong-cu', label: 'Công cụ dữ liệu', icon: 'database', path: '/cong-cu-du-lieu' },
     ] },
   ];
-  const collapsed = (() => { try { return JSON.parse(localStorage.getItem('edupay-nav') || '{"he-thong":true,"dev":true}'); } catch (e) { return { 'he-thong': true, dev: true }; } })();
+  const collapsed = (() => { try { return JSON.parse(localStorage.getItem('edupay-nav') || '{}'); } catch (e) { return {}; } })();
+
+  // ---------- session & permissions ----------
+  // Roles live in data.roles: {id, name, perms: {menuItemId: 'full' | 'view'}}; users in data.users: {id, username, name, roleId, ...}.
+  const SESSION_KEY = 'edupay-session';
+  let sessionUserId = (() => { try { return localStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; } })();
+  function user() { return (data.users || []).find((u) => u.id === sessionUserId && u.active !== false) || null; }
+  function role(u) { const x = u || user(); return x ? (data.roles || []).find((r) => r.id === x.roleId) || null : null; }
+  function perm(menuId, r) { const x = r || role(); return x && x.perms ? x.perms[menuId] || '' : ''; }
+  // can('thu-tien') → may open; can('thu-tien', 'full') → may create/edit/delete.
+  function can(menuId, level, r) { const p = perm(menuId, r); return level === 'full' ? p === 'full' : !!p; }
+  function login(userId) {
+    sessionUserId = userId || '';
+    try { if (userId) localStorage.setItem(SESSION_KEY, userId); else localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+    refreshHeader();
+  }
+  const initials = (name) => { const p = String(name || '').trim().split(/\s+/); return (p.length > 2 ? p[0][0] + p[p.length - 2][0] + p[p.length - 1][0] : p.map((x) => x[0]).join('') || '?').toUpperCase(); };
 
   function renderNav(active) {
     return MENU.map((g) => {
-      const isCol = collapsed[g.id] && !g.items.some((i) => i.id === active);
+      const items = g.items.filter((i) => can(i.id));
+      if (!items.length) return '';
+      const isCol = collapsed[g.id] && !items.some((i) => i.id === active);
       return '<div class="nav-group' + (isCol ? ' collapsed' : '') + '" data-group="' + g.id + '">' +
         '<button class="nav-group-head" type="button" data-toggle-group="' + g.id + '">' + icon(g.icon) + '<span class="lbl">' + esc(g.label) + '</span>' + icon('angle-down', 'chev') + '</button>' +
-        '<div class="nav-items">' + g.items.map((i) => '<a class="nav-item' + (i.id === active ? ' active' : '') + '" href="#' + i.path + '">' + icon(i.icon) + '<span>' + esc(i.label) + '</span></a>').join('') + '</div></div>';
+        '<div class="nav-items">' + items.map((i) => '<a class="nav-item' + (i.id === active ? ' active' : '') + '" href="#' + i.path + '">' + icon(i.icon) + '<span>' + esc(i.label) + '</span>' + (perm(i.id) === 'view' ? '<span class="nav-ro" title="Chỉ xem">' + icon('eye') + '</span>' : '') + '</a>').join('') + '</div></div>';
     }).join('');
   }
 
@@ -105,15 +127,15 @@
       '<button class="hdr-menu-toggle" type="button" id="navToggle" aria-label="Mở menu">' + icon('menu') + '</button>' +
       '<a class="app-logo" href="#/" aria-label="Trang chủ">' + icon('academy-cap') + '</a>' +
       '<div class="app-title">HỆ THỐNG THU PHÍ - ' + esc(data.school ? data.school.name : '') + '</div>' +
-      '<label class="app-year" title="Năm học đang làm việc"><select id="yearSel" aria-label="Năm học"></select>' + icon('angle-down') + '</label>' +
-      '<button class="hdr-btn" type="button" id="cogBtn" aria-label="Cài đặt">' + icon('cog') + '</button>' +
-      '<button class="hdr-btn hdr-user" type="button" id="userBtn"><span class="hdr-avatar">THD</span><span class="name">Thị Hà Doãn</span></button>' +
+      '<label class="app-year" id="yearWrap" title="Năm học đang làm việc"><select id="yearSel" aria-label="Năm học"></select>' + icon('angle-down') + '</label>' +
+      '<button class="hdr-btn" type="button" id="cogBtn" aria-label="Công cụ prototype">' + icon('cog') + '</button>' +
+      '<button class="hdr-btn hdr-user" type="button" id="userBtn"><span class="hdr-avatar" id="userAvatar"></span><span class="name" id="userName"></span></button>' +
       '</header>' +
       '<nav class="app-sidebar" id="sidebar"><div class="nav" id="nav"></div><div class="nav-status">Online</div></nav>' +
       '<main class="app-main" id="main"></main>' +
       '</div><div class="toasts" id="toasts"></div>';
     appEl = $('#app'); mainEl = $('#main'); navEl = $('#nav');
-    fillYearSelect();
+    fillYearSelect(); refreshHeader();
     $('#yearSel').addEventListener('change', (e) => { data.currentYearId = e.target.value; save(); render(); toast('Đã chuyển sang năm học ' + currentYear().name); });
     $('#navToggle').addEventListener('click', () => appEl.classList.toggle('nav-open'));
     navEl.addEventListener('click', (e) => {
@@ -126,12 +148,29 @@
     });
     $('#cogBtn').addEventListener('click', (e) => menu(e.currentTarget, [
       { label: 'Danh sách màn hình (Figma)', icon: 'list', onClick: screenIndex },
-      { label: 'Khôi phục dữ liệu mẫu', icon: 'refresh', onClick: async () => { if (await confirmDlg({ title: 'Khôi phục dữ liệu mẫu', message: 'Mọi thay đổi bạn đã làm trong prototype sẽ bị xóa và dữ liệu quay về trạng thái ban đầu.', okLabel: 'Khôi phục', danger: true })) { resetData(); fillYearSelect(); render(); toast('Đã khôi phục dữ liệu mẫu', 'success'); } } },
+      { label: 'Đổi vai trò demo', icon: 'user-card', onClick: switchUserDlg },
+      '-',
+      { label: 'Khôi phục dữ liệu mẫu', icon: 'refresh', onClick: resetPrompt },
     ]));
-    $('#userBtn').addEventListener('click', (e) => menu(e.currentTarget, [
-      { label: 'Thị Hà Doãn · Kế toán', icon: 'user', onClick: () => {} },
-      { label: 'Đăng xuất', icon: 'sign-out', onClick: () => toast('Prototype: chức năng đăng xuất không hoạt động') },
-    ]));
+    $('#userBtn').addEventListener('click', (e) => { const u = user(); if (!u) return; menu(e.currentTarget, [
+      { label: u.name + ' · ' + (role() || {}).name, icon: 'user', onClick: () => {} },
+      { label: 'Đổi tài khoản', icon: 'user-card', onClick: switchUserDlg },
+      { label: 'Đăng xuất', icon: 'sign-out', onClick: () => { login(''); render(); } },
+    ]); });
+  }
+  async function resetPrompt() {
+    if (await confirmDlg({ title: 'Khôi phục dữ liệu mẫu', message: 'Mọi thay đổi bạn đã làm trong prototype sẽ bị xóa và dữ liệu quay về trạng thái ban đầu.', okLabel: 'Khôi phục', danger: true })) {
+      resetData(); fillYearSelect(); refreshHeader(); render(); toast('Đã khôi phục dữ liệu mẫu', 'success');
+    }
+  }
+  function refreshHeader() {
+    const u = user(); if (!$('#userName')) return;
+    $('#userName').textContent = u ? u.name : '';
+    $('#userAvatar').textContent = u ? initials(u.name) : '';
+    const r = role();
+    $('#yearWrap').hidden = !u || !!(r && r.noYear);
+    $('#userBtn').hidden = !u;
+    appEl.classList.toggle('logged-out', !u);
   }
   function fillYearSelect() {
     const sel = $('#yearSel'); if (!sel) return;
@@ -139,21 +178,83 @@
   }
   function currentYear() { return (data.years || []).find((y) => y.id === data.currentYearId) || (data.years || [])[0]; }
 
+  function demoUsers() {
+    return (data.roles || []).map((r) => (data.users || []).find((u) => u.roleId === r.id && u.active !== false && u.demo)).filter(Boolean);
+  }
+  function userCard(u) {
+    const r = role(u) || {};
+    return '<button type="button" class="login-user" data-login="' + esc(u.id) + '"><span class="hdr-avatar lg">' + esc(initials(u.name)) + '</span>' +
+      '<span class="lu-text"><b>' + esc(r.name) + '</b><span>' + esc(u.name) + ' · ' + esc(u.username) + '</span><em>' + esc(r.desc || '') + '</em></span>' + icon('angle-right') + '</button>';
+  }
+  function afterLogin() { const r = role(); toast('Đã đăng nhập: ' + user().name + ' (' + r.name + ')', 'success'); }
+  function switchUserDlg() {
+    dialog({ title: 'Đổi vai trò demo', width: '600px', footer: false,
+      body: '<p class="muted" style="margin:0 0 12px">Chọn một tài khoản để xem hệ thống theo quyền của vai trò đó.</p><div class="login-users">' + demoUsers().map(userCard).join('') + '</div>',
+      onMount: (d, close) => d.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-login]'); if (!b) return; close(); login(b.dataset.login); afterLogin();
+        const p = parseHash().path; if (p === '/' || !canOpenPath(p)) go(role().home || '/'); else render();
+      }) });
+  }
+  function renderLogin(view) {
+    view.className = 'login-page';
+    view.innerHTML = '<div class="login-card">' +
+      '<div class="login-brand"><span class="app-logo">' + icon('academy-cap') + '</span><div><b>EduPay</b><span>Hệ thống thu phí · ' + esc(data.school ? data.school.name : '') + '</span></div></div>' +
+      '<form id="loginForm" class="stack" autocomplete="off">' +
+      field({ id: 'lgUser', name: 'username', label: 'Tên đăng nhập', placeholder: 'VD: ketoan' }) +
+      field({ id: 'lgPass', name: 'password', label: 'Mật khẩu', placeholder: 'Mật khẩu demo: 123456', inputType: 'password' }) +
+      btn({ label: 'Đăng nhập', icon: 'sign-in', variant: 'primary', type: 'submit', cls: 'login-submit' }) + '</form>' +
+      '<div class="login-sep"><span>Hoặc chọn nhanh tài khoản demo</span></div>' +
+      '<div class="login-users">' + demoUsers().map(userCard).join('') + '</div></div>';
+    const target = parseHash().path;
+    const done = () => { afterLogin(); if (target === '/' || !canOpenPath(target)) go(role().home || '/'); else render(); };
+    view.addEventListener('click', (e) => { const b = e.target.closest('[data-login]'); if (b) { login(b.dataset.login); done(); } });
+    $('#loginForm', view).addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = $('#lgUser', view).value.trim().toLowerCase();
+      const u = (data.users || []).find((x) => x.username.toLowerCase() === name && x.active !== false);
+      if (!u || $('#lgPass', view).value !== '123456') { toast('Sai tên đăng nhập hoặc mật khẩu. Mật khẩu demo là 123456.', 'danger'); return; }
+      login(u.id); done();
+    });
+  }
+  function matchRoute(path) {
+    for (const x of routes) { const m = path.match(x.re); if (m) { const params = {}; x.keys.forEach((k, i) => (params[k] = decodeURIComponent(m[i + 1]))); return { r: x, params }; } }
+    return { r: routes.find((x) => x.pattern === '/404'), params: {} };
+  }
+  function canOpenPath(path) { const { r } = matchRoute(path); return !r || !r.menu || can(r.menu); }
+  function renderDenied(view, r) {
+    const allowed = (data.roles || []).filter((x) => can(r.menu, 'view', x));
+    const users = allowed.map((x) => (data.users || []).find((u) => u.roleId === x.id && u.demo && u.active !== false)).filter(Boolean);
+    view.innerHTML = '<h1 class="view-title">' + esc(r.title || 'Không có quyền') + '</h1><div class="placeholder"><div>' + icon('lock') +
+      '<h2>Bạn không có quyền truy cập chức năng này</h2><p>Vai trò <b>' + esc((role() || {}).name) + '</b> chưa được cấp quyền. Chức năng này dành cho: ' + esc(allowed.map((x) => x.name).join(', ') || 'chưa có vai trò nào') + '.</p>' +
+      (users.length ? '<div class="row" style="justify-content:center;margin-top:12px">' + users.map((u) => btn({ label: 'Xem bằng tài khoản ' + (role(u) || {}).name, icon: 'user-card', attrs: { 'data-login': u.id } })).join('') + '</div>' : '') + '</div></div>';
+    view.addEventListener('click', (e) => { const b = e.target.closest('[data-login]'); if (b) { login(b.dataset.login); afterLogin(); render(); } });
+  }
+
   let cleanup = [];
   function onLeave(fn) { cleanup.push(fn); }
   function render() {
     cleanup.forEach((f) => { try { f(); } catch (e) { /* ignore */ } }); cleanup = [];
-    closeMenus();
+    closeMenus(); $$('.dlg-scrim').forEach((d) => d.remove());
     const { path, query } = parseHash();
-    let r = null, params = {};
-    for (const x of routes) { const m = path.match(x.re); if (m) { r = x; x.keys.forEach((k, i) => (params[k] = decodeURIComponent(m[i + 1]))); break; } }
-    if (!r) r = routes.find((x) => x.pattern === '/404');
-    navEl.innerHTML = renderNav(r && r.menu);
     const view = document.createElement('div');
     view.className = 'view';
     mainEl.innerHTML = ''; mainEl.appendChild(view); mainEl.scrollTop = 0;
+    const u = user();
+    refreshHeader();
+    if (!u) { navEl.innerHTML = ''; document.title = 'Đăng nhập · EduPay HCM'; renderLogin(view); return; }
+    const rl = role();
+    if (path === '/' && rl && rl.home && rl.home !== '/') { go(rl.home); return; }
+    const { r, params } = matchRoute(path);
+    navEl.innerHTML = renderNav(r && r.menu);
     document.title = (r && r.title ? r.title + ' · ' : '') + 'EduPay HCM';
-    try { r.render({ el: view, params, query, path, go, data, save, year: currentYear() }); }
+    if (r.menu && !can(r.menu)) { renderDenied(view, r); return; }
+    const readOnly = !!(r.menu && !can(r.menu, 'full'));
+    view.classList.toggle('read-only', readOnly);
+    try {
+      r.render({ el: view, params, query, path, go, data, save, year: currentYear(), user: u, role: rl, readOnly });
+      const h = readOnly && view.querySelector('.view-title');
+      if (h && !view.querySelector('.ro-banner')) h.insertAdjacentHTML('beforeend', '<span class="ro-banner">' + icon('eye') + 'Chỉ xem</span>');
+    }
     catch (err) { console.error(err); view.innerHTML = '<div class="note danger">Lỗi hiển thị màn hình: ' + esc(err.message) + '</div>'; }
   }
 
@@ -184,7 +285,7 @@
     } else if (o.type === 'money') {
       ctl = '<input class="ctl num" inputmode="numeric" data-money' + common + ' value="' + esc(money(o.value)) + '">';
     } else {
-      ctl = '<input class="ctl' + (o.type === 'number' ? ' num' : '') + '" type="' + (o.type === 'number' ? 'number' : 'text') + '"' + common + ' value="' + esc(o.value) + '"' + (o.type === 'readonly' || o.readonly ? ' readonly' : '') + '>';
+      ctl = '<input class="ctl' + (o.type === 'number' ? ' num' : '') + '" type="' + (o.type === 'number' ? 'number' : o.inputType || 'text') + '"' + common + ' value="' + esc(o.value) + '"' + (o.type === 'readonly' || o.readonly ? ' readonly' : '') + '>';
     }
     if (o.icon) ctl = '<div class="ctl-wrap' + (o.iconRight ? ' suffix' : '') + '">' + icon(o.icon) + ctl + '</div>';
     return '<div class="field' + (o.error ? ' invalid' : '') + (o.cls ? ' ' + o.cls : '') + '">' +
@@ -343,6 +444,7 @@
     let selected = [];
     let q = '';
     let filterOpen = true;
+    const ro = o.readOnly != null ? o.readOnly : o.el.classList.contains('read-only');
     const draw = () => {
       const all = o.rows();
       const rows = q ? all.filter((r) => (o.searchKeys || o.columns.map((c) => c.key)).some((k) => norm(r[k]).includes(norm(q)))) : all;
@@ -350,16 +452,16 @@
         '<div><button class="filter-head' + (filterOpen ? '' : ' closed') + '" type="button" data-action="filter">' + icon('angle-down') + 'Filter</button></div>' +
         (filterOpen ? '<div class="toolbar">' + btn({ label: 'Refresh', icon: 'refresh', variant: 'primary', action: 'refresh' }) + btn({ icon: 'search', aria: 'Tìm kiếm', action: 'search' }) +
           (q ? '<div style="width:260px">' + search({ id: 'crudQ', value: q }) + '</div>' : btn({ label: 'Add search condition', variant: 'tertiary', action: 'addcond' })) + '</div>' : '') +
-        '<div class="toolbar">' + btn({ label: 'Create', icon: 'plus', variant: 'primary', action: 'create' }) +
-        btn({ label: 'Edit', icon: 'pencil', action: 'edit', disabled: selected.length !== 1 }) + btn({ label: 'Remove', icon: 'trash', action: 'remove', disabled: !selected.length }) +
+        '<div class="toolbar">' + (ro ? '<span class="badge">' + icon('eye') + ' Chỉ xem</span>' : btn({ label: 'Create', icon: 'plus', variant: 'primary', action: 'create' }) +
+        btn({ label: 'Edit', icon: 'pencil', action: 'edit', disabled: selected.length !== 1 }) + btn({ label: 'Remove', icon: 'trash', action: 'remove', disabled: !selected.length })) +
         (o.extraTools || '') + '<span class="grow"></span>' +
         '<span class="pager">' + btn({ icon: 'angle-double-left', aria: 'Trang đầu', disabled: true }) + btn({ icon: 'angle-left', aria: 'Trang trước', disabled: true }) +
         '<span class="count">' + rows.length + ' rows</span>' + btn({ icon: 'angle-right', aria: 'Trang sau', disabled: true }) + btn({ icon: 'angle-double-right', aria: 'Trang cuối', disabled: true }) + '</span></div>' +
         grid({ columns: o.columns, rows, rowKey: o.rowKey, selectable: 'single', selected, fill: true, striped: false, id: 'crudGrid' });
-      bindGrid($('#crudGrid', o.el), { selectable: 'single', selected, onSelect: (ids) => { selected = ids; syncBtns(); }, onRowDblClick: (k) => o.onEdit && o.onEdit(k) });
+      bindGrid($('#crudGrid', o.el), { selectable: 'single', selected, onSelect: (ids) => { selected = ids; syncBtns(); }, onRowDblClick: (k) => !ro && o.onEdit && o.onEdit(k) });
       const qi = $('#crudQ', o.el); if (qi) { qi.addEventListener('input', () => { q = qi.value; const pos = qi.selectionStart; draw(); const n = $('#crudQ', o.el); n.focus(); n.setSelectionRange(pos, pos); }); }
     };
-    const syncBtns = () => { $('[data-action="edit"]', o.el).disabled = selected.length !== 1; $('[data-action="remove"]', o.el).disabled = !selected.length; };
+    const syncBtns = () => { if (ro) return; $('[data-action="edit"]', o.el).disabled = selected.length !== 1; $('[data-action="remove"]', o.el).disabled = !selected.length; };
     o.el.onclick = async (e) => {
       const a = e.target.closest('[data-action]'); if (!a || a.disabled) return;
       const act = a.dataset.action;
@@ -396,6 +498,6 @@
     render();
   }
 
-  window.App = { route, frame, go, back, data, seed, save, resetData, start, render, onLeave, currentYear, MENU };
+  window.App = { route, frame, go, back, data, seed, save, resetData, start, render, onLeave, currentYear, MENU, user, role, can, perm, login, initials };
   window.UI = { esc, money, parseMoney, uid, fmtDate, toISO, fromISO, norm, $, $$, icon, btn, field, search, formValues, validate, grid, bindGrid, stat, badge, dialog, confirm: confirmDlg, menu, closeMenus, toast, placeholder, crudList, screenIndex };
 })();
