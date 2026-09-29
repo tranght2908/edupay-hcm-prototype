@@ -1,0 +1,60 @@
+/* screens: danh-muc (group A) — detail editors, nested grids, tree rows. Colors via base.css tokens only. */
+.dm-view { gap: 0; padding-bottom: 16px; }
+.dm-view > .dm-title { font-weight: 500; margin-bottom: 12px; }
+
+/* Form rows with Figma field widths (collapse to full width on narrow screens) */
+.dm-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 20px; }
+.dm-form.dm-gap20 { margin-top: 8px; }
+.dm-form .field { flex: none; width: 280px; max-width: 100%; }
+.dm-form .field.w170 { width: 170px; }
+.dm-form .field.w280 { width: 280px; }
+.dm-form .field.w360 { width: 360px; }
+.dm-form .field.w520 { width: 520px; }
+.dm-form .field.w560 { width: 560px; }
+.dm-form .dm-break { flex-basis: 100%; height: 0; }
+.dm-form .ctl:disabled { background: var(--grid-bg); color: var(--text-subtle); cursor: default; }
+
+.dm-section { font-size: 18px; font-weight: 500; line-height: 24px; margin: 30px 0 14px; color: var(--text); }
+.dm-nested { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.dm-nested.dm-fill { flex: 1; }
+.dm-nested.dm-w1120 { max-width: 1120px; }
+.dm-tools { display: flex; gap: 12px; flex-wrap: wrap; }
+.dm-tools .btn { height: 34px; }
+
+/* Compact bordered grid (01b stages) */
+.dm-compact.ui-grid-wrap { border-radius: 8px; min-height: 220px; }
+.dm-compact .ui-grid th, .dm-compact .ui-grid td { height: 32px; padding: 0 10px; border-right: 1px solid var(--divider); }
+.dm-compact .ui-grid th { font-weight: 400; color: var(--text); }
+.dm-compact .ui-grid th:last-child, .dm-compact .ui-grid td:last-child { border-right: 0; }
+/* Tall list grid (02b classes) */
+.dm-tall.ui-grid-wrap { min-height: 430px; border-radius: 8px; }
+.dm-tall .ui-grid th { padding: 0 16px; }
+.dm-tall .ui-grid td { height: 44px; padding: 0 16px; }
+
+/* Footer: Cancel / OK bottom-right */
+.dm-foot { margin-top: auto; padding: 28px 44px 0 0; display: flex; justify-content: flex-end; gap: 12px; }
+.dm-foot .btn { min-width: 56px; height: 34px; }
+
+/* Validation / info summary (04b) */
+.dm-summary { margin-top: 32px; max-width: 1120px; padding: 16px 20px; line-height: 24px; }
+.dm-summary .dm-sum-title { display: block; font-size: 15px; margin-bottom: 8px; }
+
+/* Tree rows (02) */
+.dm-tog { border: 0; background: none; width: 24px; height: 24px; padding: 0; margin: 0 6px 0 -2px; color: var(--text-muted); cursor: pointer; display: inline-grid; place-items: center; vertical-align: middle; border-radius: 6px; }
+.dm-tog:hover { background: var(--grid-bg); color: var(--text); }
+.dm-tog .ic { width: 16px; height: 16px; }
+.dm-indent { padding-left: 46px; }
+
+/* Dialog tweaks (01c, 02c) */
+.dm-dlg .dlg-head { border-bottom: 0; padding: 20px 24px 8px; }
+.dm-dlg .dlg-head h2 { font-size: 20px; }
+.dm-dlg .dlg-close { width: 36px; height: 34px; border: 1px solid var(--border-ctl); border-radius: var(--radius-btn); box-shadow: var(--shadow-xs); color: var(--text-muted); }
+.dm-dlg .dlg-body { min-height: 150px; padding: 20px 24px 36px; }
+.dm-dlg .dlg-foot { padding: 20px 50px 20px 24px; gap: 20px; }
+.dm-dlg-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px 24px; }
+.dm-dlg-form .field { width: auto; }
+
+@media (max-width: 900px) {
+  .dm-foot { padding-right: 0; }
+  .dm-indent { padding-left: 30px; }
+}

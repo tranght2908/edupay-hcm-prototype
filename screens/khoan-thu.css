@@ -1,0 +1,106 @@
+/* screens: khoan-thu (group C) — 07 Danh sách khoản thu, 07b-f form, 08 Đăng ký khoản thu */
+
+/* ---------- 07 list ---------- */
+.kt-view { gap: 14px; padding-top: 14px; }
+.kt-listbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.kt-listbar .grow { flex: 1; }
+.kt-search { flex: 0 1 760px; min-width: 0; }
+.kt-add { min-width: 154px; }
+.kt-fee-grid .ui-grid-wrap { min-height: 0; background: var(--bg-card); }
+.kt-fee-grid .ui-grid { min-width: 1580px; table-layout: fixed; }
+.kt-fee-grid .ui-grid th { height: 31px; padding: 0 8px; font-weight: 500; }
+.kt-fee-grid .ui-grid td { height: 32px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kt-fee-grid .ui-grid th.actions, .kt-fee-grid .ui-grid td.actions { width: 52px; position: sticky; right: 0; }
+.kt-fee-grid .ui-grid th:last-child { position: sticky; right: 0; z-index: 2; }
+.kt-gridfoot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; padding: 0 6px; margin-top: -2px; }
+.kt-total { color: var(--accent-text); font-weight: 500; }
+.kt-cb {
+  display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; margin-left: 56px;
+  border: 1px solid var(--border-ctl); background: var(--bg-card); vertical-align: middle;
+}
+.kt-cb.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.kt-cb .ic { width: 12px; height: 12px; }
+
+/* ---------- 07b-f dialog ---------- */
+.kt-dlg .dlg-head { padding: 22px 28px; }
+.kt-dlg .dlg-head h2 { font-size: 24px; }
+.kt-dlg .dlg-close .ic { width: 20px; height: 20px; }
+.kt-dlg .dlg-body { padding: 8px 28px 0; }
+.kt-dlg .dlg-foot { margin: 0 28px; padding: 20px 0 18px; }
+.kt-dlg .dlg-foot .btn { min-width: 80px; }
+.kt-sec { padding: 12px 0 14px; border-bottom: 1px solid var(--divider); display: flex; flex-direction: column; gap: 8px; }
+.kt-sec.last { border-bottom: 0; padding-bottom: 20px; }
+.kt-sec h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.kt-sec .form-grid { gap: 12px 28px; }
+.kt-sec .kt-g2 { --cols: 2; }
+.kt-sec .kt-g4 { --cols: 4; gap: 12px 22px; }
+.kt-sub { font-size: 13px; font-weight: 700; margin-bottom: -4px; }
+.kt-radios { gap: 0; }
+.kt-radios label { min-width: 120px; padding: 2px 0; font-size: 13.5px; }
+.kt-radios input { width: 18px; height: 18px; margin-right: 4px; }
+.kt-rules { display: grid; grid-template-columns: 352px 340px minmax(0, 1fr); gap: 14px 0; align-items: start; padding-top: 6px; }
+.kt-rules .chk { font-size: 13.5px; color: var(--text); }
+.kt-rules .chk.kt-dis { color: var(--text-subtle); cursor: default; }
+.kt-rules .kt-rate { grid-row: span 2; max-width: 330px; margin-top: -6px; }
+.kt-tiers { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.kt-tiers .ui-grid { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.kt-tiers .ui-grid th { height: 34px; }
+.kt-tiers .ui-grid td { height: 42px; }
+
+/* ---------- 08 registration matrix ---------- */
+.kt-reg { display: grid; grid-template-columns: 306px minmax(0, 1fr); gap: 12px; align-items: start; }
+.kt-tree-card { overflow: hidden; }
+.kt-tree-head { background: var(--grid-bg); border-bottom: 1px solid var(--divider); padding: 14px 18px; font-weight: 700; font-size: 15px; }
+.kt-tree-search { padding: 12px 14px 4px; }
+.kt-tree-card .tree { padding: 6px 8px 10px; }
+.kt-tree-card .tree-item { height: 36px; }
+.kt-grade { font-weight: 500; padding-left: 6px; }
+.kt-grade .ic { width: 14px; height: 14px; }
+.kt-class.l1 { padding-left: 32px; position: relative; }
+.kt-class.active::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--accent); }
+.kt-tree-empty { padding: 10px; font-size: 13px; }
+.kt-reg-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.kt-reg-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kt-reg-head .grow { flex: 1; }
+.kt-reg-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.kt-reg-title .muted { font-size: 13px; }
+.kt-feesel { width: 250px; max-width: 100%; }
+.kt-bulk { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-card); font-size: 13px; }
+.kt-selcount { flex: 1; color: var(--text-muted); min-width: 160px; }
+.kt-selcount b { color: var(--text); }
+.kt-matrix .ui-grid-wrap { max-height: max(360px, calc(100vh - 300px)); background: var(--bg-card); }
+.kt-matrix .ui-grid th { white-space: normal; line-height: 1.2; font-weight: 500; font-size: 13px; padding: 6px 8px; min-width: 88px; }
+.kt-matrix .ui-grid th.chk-col { min-width: 0; }
+.kt-matrix .ui-grid td { height: 44px; padding: 0 8px; }
+.kt-matrix .kt-name { display: block; white-space: nowrap; }
+.kt-tg { border: 0; background: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; color: var(--text-subtle); font-size: 13px; }
+.kt-tg .ic { width: 20px; height: 20px; }
+.kt-tg.on { color: var(--success); }
+.kt-tg:hover { background: var(--grid-bg); }
+.kt-tg.wide { min-width: 132px; justify-content: flex-start; }
+.kt-footcell { display: inline-flex; flex-direction: column; align-items: center; gap: 0; font-weight: 700; }
+.kt-footcell .btn.sm { height: 22px; font-size: 12px; padding: 0 6px; }
+.kt-matrix .ui-grid tfoot td { height: 52px; position: sticky; bottom: 0; z-index: 1; border-top: 1px solid var(--divider); }
+.kt-sum { align-items: center; font-size: 13px; color: var(--text-muted); }
+.kt-sum b { color: var(--text); }
+.kt-sum .kt-amt { color: var(--accent-text); }
+.kt-pending, .kt-saved { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.kt-pending { color: var(--warning); }
+.kt-saved { color: var(--success); }
+.kt-pending .ic, .kt-saved .ic { width: 14px; height: 14px; }
+
+@media (max-width: 1100px) {
+  .kt-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kt-sec .kt-g4 { --cols: 2; }
+}
+@media (max-width: 900px) {
+  .kt-reg { grid-template-columns: minmax(0, 1fr); }
+  .kt-rules { grid-template-columns: minmax(0, 1fr); }
+  .kt-rules .kt-rate { grid-row: auto; margin-top: 0; }
+  .kt-search { flex-basis: 100%; }
+  .kt-feesel { width: 100%; }
+  .kt-radios label { min-width: 100px; }
+}
+.kt-form .ctl.num { text-align: left; }
+.kt-dlg .dlg-foot .btn:not(.primary) { color: var(--text); }
+.kt-gridfoot { margin-top: 2px; }
